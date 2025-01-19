@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+/backend/node_modules/
+/mobile-app/node_modules/
+
+# Environment variables
+.env
+/backend/.env
+/mobile-app/.env
+
+# Expo
+/mobile-app/.expo/
+/mobile-app/dist/
+/mobile-app/web-build/
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# TypeScript
+*.tsbuildinfo
+
+# IDEs
+.idea/
+.vscode/
