@@ -7,6 +7,7 @@ const sequelize = require("./config/config");
 const authRoutes = require("./routes/auth");
 const walletRoutes = require("./routes/wallet");
 const exchangeRoutes = require("./routes/exchange");
+const transactionRoutes = require("./routes/transactions"); // Dodaj ten import
 
 const app = express();
 
@@ -24,11 +25,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/exchange", exchangeRoutes);
-
-// Test endpoint
-app.get("/test", (req, res) => {
-  res.json({ message: "Backend działa prawidłowo!" });
-});
+app.use("/api/transactions", transactionRoutes); // Dodaj ten route
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {

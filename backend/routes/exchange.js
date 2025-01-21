@@ -18,15 +18,17 @@ router.get("/rates", auth, async (req, res) => {
 });
 
 router.post("/exchange", auth, async (req, res) => {
-  const { fromCurrency, toCurrency, amount } = req.body;
-
-  // Rozpocznij transakcję bazodanową
   const transaction = await sequelize.transaction();
 
   try {
-    // Sprawdź dostępność środków
+    const { fromCurrency, toCurrency, amount } = req.body;
+
+    // Sprawdź dostępność środków w źródłowym portfelu
     const sourceWallet = await Wallet.findOne({
-      where: { userId: req.userId, currency: fromCurrency },
+      where: {
+        userId: req.userId,
+        currency: fromCurrency,
+      },
       transaction,
     });
 
@@ -35,31 +37,12 @@ router.post("/exchange", auth, async (req, res) => {
       return res.status(400).json({ error: "Niewystarczające środki" });
     }
 
-    // Pobierz aktualne kursy
-    const rates = await NBPService.getCurrentExchangeRates();
-    const fromRate =
-      fromCurrency === "PLN"
-        ? 1
-        : rates.find((r) => r.code === fromCurrency)?.mid;
-    const toRate =
-      toCurrency === "PLN" ? 1 : rates.find((r) => r.code === toCurrency)?.mid;
-
-    if (!fromRate || !toRate) {
-      await transaction.rollback();
-      return res.status(400).json({ error: "Nieprawidłowa waluta" });
-    }
-
-    // Oblicz kwotę wymienioną
-    const exchangeRate = toRate / fromRate;
-    const convertedAmount = amount * exchangeRate;
-
-    // Odejmij z pierwszego portfela
-    sourceWallet.balance -= Number(amount);
-    await sourceWallet.save({ transaction });
-
-    // Dodaj do drugiego portfela
+    // Znajdź lub utwórz portfel docelowy
     let targetWallet = await Wallet.findOne({
-      where: { userId: req.userId, currency: toCurrency },
+      where: {
+        userId: req.userId,
+        currency: toCurrency,
+      },
       transaction,
     });
 
@@ -74,10 +57,45 @@ router.post("/exchange", auth, async (req, res) => {
       );
     }
 
-    targetWallet.balance = Number(targetWallet.balance) + convertedAmount;
+    // Pobierz kursy
+    const rates = await NBPService.getCurrentExchangeRates();
+    const fromRate =
+      fromCurrency === "PLN"
+        ? 1
+        : rates.find((r) => r.code === fromCurrency)?.mid;
+    const toRate =
+      toCurrency === "PLN" ? 1 : rates.find((r) => r.code === toCurrency)?.mid;
+
+    if (!fromRate || !toRate) {
+      await transaction.rollback();
+      return res.status(400).json({ error: "Nieprawidłowa waluta" });
+    }
+
+    // Oblicz kwotę po przewalutowaniu
+    let convertedAmount;
+    let savedExchangeRate;
+
+    if (fromCurrency === "PLN") {
+      convertedAmount = amount / toRate;
+      savedExchangeRate = toRate;
+    } else if (toCurrency === "PLN") {
+      convertedAmount = amount * fromRate;
+      savedExchangeRate = fromRate;
+    } else {
+      const amountInPLN = amount * fromRate;
+      convertedAmount = amountInPLN / toRate;
+      savedExchangeRate = fromRate / toRate;
+    }
+
+    // Aktualizuj portfele
+    sourceWallet.balance = Number(sourceWallet.balance) - Number(amount);
+    await sourceWallet.save({ transaction });
+
+    targetWallet.balance =
+      Number(targetWallet.balance) + Number(convertedAmount);
     await targetWallet.save({ transaction });
 
-    // Zapisz transakcję
+    // Zapisz transakcję w historii
     await Transaction.create(
       {
         userId: req.userId,
@@ -85,24 +103,24 @@ router.post("/exchange", auth, async (req, res) => {
         fromCurrency,
         toCurrency,
         amount,
-        exchangeRate,
+        exchangeRate: savedExchangeRate,
         status: "COMPLETED",
       },
       { transaction }
     );
 
-    // Zatwierdź transakcję bazodanową
+    // Zatwierdź transakcję
     await transaction.commit();
 
     res.json({
       message: "Wymiana została zrealizowana",
       convertedAmount,
-      exchangeRate,
+      exchangeRate: toRate / fromRate,
     });
   } catch (error) {
     await transaction.rollback();
     console.error("Błąd wymiany walut:", error);
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 

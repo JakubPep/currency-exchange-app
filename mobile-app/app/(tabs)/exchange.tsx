@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { View, Text, useThemeColor } from "../../components/Themed";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 type Rate = {
   currency: string;
@@ -92,22 +93,21 @@ export default function ExchangeScreen() {
     if (fromRate && toRate && amount) {
       const amountNum = parseFloat(amount);
       if (!isNaN(amountNum)) {
+        let converted;
         // Jeśli wymieniamy z PLN
         if (fromCurrency === "PLN") {
-          const converted = amountNum / toRate;
-          setConvertedAmount(converted);
+          converted = amountNum / toRate;
         }
         // Jeśli wymieniamy na PLN
         else if (toCurrency === "PLN") {
-          const converted = amountNum * fromRate;
-          setConvertedAmount(converted);
+          converted = amountNum * fromRate;
         }
         // Wymiana między walutami obcymi
         else {
-          const inPLN = amountNum * fromRate;
-          const converted = inPLN / toRate;
-          setConvertedAmount(converted);
+          const amountInPLN = amountNum * fromRate;
+          converted = amountInPLN / toRate;
         }
+        setConvertedAmount(converted);
       }
     }
   };
@@ -139,10 +139,14 @@ export default function ExchangeScreen() {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert("Sukces", "Wymiana została zrealizowana");
-        setAmount("");
-        setConvertedAmount(null);
-        fetchInitialData();
+        Alert.alert("Sukces", "Wymiana została zrealizowana", [
+          {
+            text: "OK",
+            onPress: () => {
+              router.push("/(tabs)/dashboard");
+            },
+          },
+        ]);
       } else {
         Alert.alert("Błąd", data.error || "Nie udało się wykonać wymiany");
       }
@@ -214,77 +218,77 @@ export default function ExchangeScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-    <View style={styles.container}>
-      <Text style={styles.title}>Wymiana walut</Text>
+      <View style={styles.container}>
+        <Text style={styles.title}>Wymiana walut</Text>
 
-      <View style={[styles.card, { backgroundColor: colors.card }]}>
-        <Text style={styles.label}>Wymieniam z:</Text>
-        <TouchableOpacity
-          style={[
-            styles.currencySelector,
-            { backgroundColor: colors.background },
-          ]}
-          onPress={() => setShowFromModal(true)}
-        >
-          <Text style={{ color: colors.text }}>{fromCurrency}</Text>
-        </TouchableOpacity>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <Text style={styles.label}>Wymieniam z:</Text>
+          <TouchableOpacity
+            style={[
+              styles.currencySelector,
+              { backgroundColor: colors.background },
+            ]}
+            onPress={() => setShowFromModal(true)}
+          >
+            <Text style={{ color: colors.text }}>{fromCurrency}</Text>
+          </TouchableOpacity>
 
-        <Text style={styles.label}>Kwota:</Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colors.background,
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          value={amount}
-          onChangeText={setAmount}
-          placeholder="Wprowadź kwotę"
-          placeholderTextColor={colors.placeholder}
-          keyboardType="numeric"
+          <Text style={styles.label}>Kwota:</Text>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.background,
+                color: colors.text,
+                borderColor: colors.border,
+              },
+            ]}
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="Wprowadź kwotę"
+            placeholderTextColor={colors.placeholder}
+            keyboardType="numeric"
+          />
+
+          <Text style={styles.label}>Wymieniam na:</Text>
+          <TouchableOpacity
+            style={[
+              styles.currencySelector,
+              { backgroundColor: colors.background },
+            ]}
+            onPress={() => setShowToModal(true)}
+          >
+            <Text style={{ color: colors.text }}>{toCurrency}</Text>
+          </TouchableOpacity>
+
+          {convertedAmount !== null && (
+            <Text style={[styles.conversionResult, { color: colors.primary }]}>
+              Otrzymasz: {convertedAmount.toFixed(2)} {toCurrency}
+            </Text>
+          )}
+
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: colors.primary }]}
+            onPress={handleExchange}
+          >
+            <Text style={styles.buttonText}>Wymień walutę</Text>
+          </TouchableOpacity>
+        </View>
+
+        <CurrencySelector
+          visible={showFromModal}
+          onClose={() => setShowFromModal(false)}
+          onSelect={setFromCurrency}
+          currentValue={fromCurrency}
         />
 
-        <Text style={styles.label}>Wymieniam na:</Text>
-        <TouchableOpacity
-          style={[
-            styles.currencySelector,
-            { backgroundColor: colors.background },
-          ]}
-          onPress={() => setShowToModal(true)}
-        >
-          <Text style={{ color: colors.text }}>{toCurrency}</Text>
-        </TouchableOpacity>
-
-        {convertedAmount !== null && (
-          <Text style={[styles.conversionResult, { color: colors.primary }]}>
-            Otrzymasz: {convertedAmount.toFixed(2)} {toCurrency}
-          </Text>
-        )}
-
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.primary }]}
-          onPress={handleExchange}
-        >
-          <Text style={styles.buttonText}>Wymień walutę</Text>
-        </TouchableOpacity>
+        <CurrencySelector
+          visible={showToModal}
+          onClose={() => setShowToModal(false)}
+          onSelect={setToCurrency}
+          currentValue={toCurrency}
+        />
       </View>
-
-      <CurrencySelector
-        visible={showFromModal}
-        onClose={() => setShowFromModal(false)}
-        onSelect={setFromCurrency}
-        currentValue={fromCurrency}
-      />
-
-      <CurrencySelector
-        visible={showToModal}
-        onClose={() => setShowToModal(false)}
-        onSelect={setToCurrency}
-        currentValue={toCurrency}
-      />
-    </View>
     </TouchableWithoutFeedback>
   );
 }
