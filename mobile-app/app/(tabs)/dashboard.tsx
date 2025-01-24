@@ -7,6 +7,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  SafeAreaView,
 } from "react-native";
 import { View, Text, useThemeColor } from "../../components/Themed";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -243,78 +244,89 @@ export default function DashboardScreen() {
   );
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={styles.sectionTitle}>Twoje środki</Text>
-          <View style={styles.walletsContainer}>
-            {wallets.map((wallet) => (
-              <View
-                key={wallet.id}
-                style={[styles.walletCard, { backgroundColor: colors.primary }]}
-              >
-                <View style={styles.walletHeader}>
-                  <Text style={styles.walletCurrency}>{wallet.currency}</Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSelectedCurrency(wallet.currency);
-                      setIsDepositModalVisible(true);
-                    }}
-                  >
-                    <Text style={styles.depositButton}>+</Text>
-                  </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          style={[styles.container, { backgroundColor: colors.background }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={[styles.section, { backgroundColor: colors.card }]}>
+            <Text style={styles.sectionTitle}>Twoje środki</Text>
+            <View style={styles.walletsContainer}>
+              {wallets.map((wallet) => (
+                <View
+                  key={wallet.id}
+                  style={[
+                    styles.walletCard,
+                    { backgroundColor: colors.primary },
+                  ]}
+                >
+                  <View style={styles.walletHeader}>
+                    <Text style={styles.walletCurrency}>{wallet.currency}</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSelectedCurrency(wallet.currency);
+                        setIsDepositModalVisible(true);
+                      }}
+                    >
+                      <Text style={styles.depositButton}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.walletAmount}>
+                    {parseFloat(wallet.balance).toFixed(2)}
+                  </Text>
                 </View>
-                <Text style={styles.walletAmount}>
-                  {parseFloat(wallet.balance).toFixed(2)}
+              ))}
+            </View>
+          </View>
+
+          <View style={[styles.section, { backgroundColor: colors.card }]}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Aktualne kursy walut</Text>
+              <TouchableOpacity
+                onPress={() => router.push("/historical-rates")}
+                style={styles.historicalButton}
+              >
+                <Text
+                  style={[
+                    styles.historicalButtonText,
+                    { color: colors.primary },
+                  ]}
+                >
+                  Historia kursów
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {rates.map((rate) => (
+              <View
+                key={rate.code}
+                style={[styles.rateRow, { borderBottomColor: colors.border }]}
+              >
+                <Text style={styles.rateCode}>{rate.code}</Text>
+                <Text style={styles.rateName}>{rate.currency}</Text>
+                <Text style={[styles.rateValue, { color: colors.primary }]}>
+                  {rate.mid.toFixed(4)} PLN
                 </Text>
               </View>
             ))}
           </View>
-        </View>
 
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Aktualne kursy walut</Text>
-            <TouchableOpacity
-              onPress={() => router.push("/historical-rates")}
-              style={styles.historicalButton}
-            >
-              <Text
-                style={[styles.historicalButtonText, { color: colors.primary }]}
-              >
-                Historia kursów
-              </Text>
-            </TouchableOpacity>
-          </View>
-          {rates.map((rate) => (
-            <View
-              key={rate.code}
-              style={[styles.rateRow, { borderBottomColor: colors.border }]}
-            >
-              <Text style={styles.rateCode}>{rate.code}</Text>
-              <Text style={styles.rateName}>{rate.currency}</Text>
-              <Text style={[styles.rateValue, { color: colors.primary }]}>
-                {rate.mid.toFixed(4)} PLN
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        <DepositModal
-          visible={isDepositModalVisible}
-          onClose={() => setIsDepositModalVisible(false)}
-          onSubmit={handleDeposit}
-          currency={selectedCurrency}
-        />
-      </ScrollView>
-    </TouchableWithoutFeedback>
+          <DepositModal
+            visible={isDepositModalVisible}
+            onClose={() => setIsDepositModalVisible(false)}
+            onSubmit={handleDeposit}
+            currency={selectedCurrency}
+          />
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     padding: 16,

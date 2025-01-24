@@ -1,5 +1,6 @@
 import {
   Alert,
+  SafeAreaView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -57,79 +58,70 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Logowanie</Text>
-      <Text style={[styles.subtitle, { color: colors.placeholder }]}>
-        Wprowadź dane, aby się zalogować
-      </Text>
-
-      <TextInput
-        style={[
-          styles.input,
-          {
-            backgroundColor: colors.card,
-            borderColor: colors.border,
-            color: colors.text,
-          },
-        ]}
-        placeholder="Wprowadź swój email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        placeholderTextColor={colors.placeholder}
-      />
-
-      <TextInput
-        style={[
-          styles.input,
-          {
-            backgroundColor: colors.card,
-            borderColor: colors.border,
-            color: colors.text,
-          },
-        ]}
-        placeholder="Wprowadź swoje hasło"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        placeholderTextColor={colors.placeholder}
-      />
-
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: colors.primary }]}
-        onPress={handleLogin}
-      >
-        <Text style={styles.buttonText}>Zaloguj się</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        onPress={() => router.push("/register")}
-        style={styles.linkButton}
-      >
-        <Text style={[styles.link, { color: colors.primary }]}>
-          Nie masz konta? Zarejestruj się
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Logowanie</Text>
+        <Text style={[styles.subtitle, { color: colors.placeholder }]}>
+          Wprowadź dane, aby się zalogować
         </Text>
-      </TouchableOpacity>
 
-      <Text
-        style={[
-          styles.testInfo,
-          {
-            backgroundColor: colors.card,
-            color: colors.placeholder,
-          },
-        ]}
-      >
-        Dane testowe:{"\n"}
-        Email: test@example.com{"\n"}
-        Hasło: password123
-      </Text>
-    </View>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              color: colors.text,
+            },
+          ]}
+          placeholder="Wprowadź swój email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          placeholderTextColor={colors.placeholder}
+        />
+
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              color: colors.text,
+            },
+          ]}
+          placeholder="Wprowadź swoje hasło"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          placeholderTextColor={colors.placeholder}
+        />
+
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.primary }]}
+          onPress={handleLogin}
+        >
+          <Text style={styles.buttonText}>Zaloguj się</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => router.push("/register")}
+          style={styles.linkButton}
+        >
+          <Text style={[styles.link, { color: colors.primary }]}>
+            Nie masz konta? Zarejestruj się
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     justifyContent: "center",
@@ -169,13 +161,6 @@ const styles = StyleSheet.create({
   },
   link: {
     fontSize: 16,
-    textAlign: "center",
-  },
-  testInfo: {
-    marginTop: 30,
-    padding: 10,
-    borderRadius: 5,
-    fontSize: 14,
     textAlign: "center",
   },
 });

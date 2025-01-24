@@ -6,10 +6,12 @@ import {
   ScrollView,
   Modal,
   Alert,
+  SafeAreaView,
 } from "react-native";
 import { View, Text, useThemeColor } from "../components/Themed";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { useRouter } from "expo-router";
 
 type HistoricalRate = {
   currency: string;
@@ -26,6 +28,7 @@ export default function HistoricalRatesScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const colors = useThemeColor();
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const router = useRouter();
 
   const fetchHistoricalRates = async () => {
     try {
@@ -48,6 +51,7 @@ export default function HistoricalRatesScreen() {
         return;
       }
 
+      // logowanie zapytań dla debuggingu
       console.log(
         "Wysyłanie zapytania do:",
         `http://192.168.33.8:3000/api/exchange/rates/${selectedCurrency}/historical?startDate=${startDate}&endDate=${endDate}`
@@ -154,9 +158,21 @@ export default function HistoricalRatesScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.card, { backgroundColor: colors.card }]}>
-        <Text style={styles.title}>Historia kursów walut</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Text style={[styles.backButtonText, { color: colors.primary }]}>
+              ← Powrót
+            </Text>
+          </TouchableOpacity>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Historia kursów walut</Text>
+          </View>
+        </View>
 
         <View style={styles.filters}>
           <TouchableOpacity
@@ -209,33 +225,36 @@ export default function HistoricalRatesScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+
+        <ScrollView style={styles.ratesList}>
+          {rates.map((rate, index) => (
+            <View
+              key={index}
+              style={[styles.rateItem, { backgroundColor: colors.card }]}
+            >
+              <Text style={styles.date}>{rate.effectiveDate}</Text>
+              <Text style={[styles.rate, { color: colors.primary }]}>
+                1 {selectedCurrency} = {rate.mid.toFixed(4)} PLN
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+
+        <CurrencySelector
+          visible={showCurrencyModal}
+          onClose={() => setShowCurrencyModal(false)}
+          onSelect={setSelectedCurrency}
+          currentValue={selectedCurrency}
+        />
       </View>
-
-      <ScrollView style={styles.ratesList}>
-        {rates.map((rate, index) => (
-          <View
-            key={index}
-            style={[styles.rateItem, { backgroundColor: colors.card }]}
-          >
-            <Text style={styles.date}>{rate.effectiveDate}</Text>
-            <Text style={[styles.rate, { color: colors.primary }]}>
-              1 {selectedCurrency} = {rate.mid.toFixed(4)} PLN
-            </Text>
-          </View>
-        ))}
-      </ScrollView>
-
-      <CurrencySelector
-        visible={showCurrencyModal}
-        onClose={() => setShowCurrencyModal(false)}
-        onSelect={setSelectedCurrency}
-        currentValue={selectedCurrency}
-      />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     padding: 16,
@@ -330,5 +349,24 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  backButton: {
+    padding: 8,
+    zIndex: 1,
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: "center",
+    marginLeft: -44,
   },
 });
