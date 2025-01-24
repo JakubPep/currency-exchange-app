@@ -36,16 +36,19 @@ currency-exchange-app/
 - npm (v6 lub wyższa)
 - Expo CLI (dla aplikacji mobilnej)
 
-## Instalacja i uruchomienie backendu
 
+```
+## Instalacja i uruchomienie
+
+### Backend
 1. Sklonuj repozytorium:
-```bash
+```
 git clone [adres-repozytorium]
 cd currency-exchange-app/backend
 ```
 
 2. Zainstaluj zależności:
-```bash
+```
 npm install
 ```
 
@@ -53,17 +56,17 @@ npm install
 - Zainstaluj PostgreSQL ze strony oficjalnej
 - Uruchom PostgreSQL
 - Utwórz nową bazę danych:
-```sql
+```
 CREATE DATABASE currency_exchange;
 ```
 
 4. Skonfiguruj zmienne środowiskowe:
 - Skopiuj plik `.env.example` do `.env`
-```bash
+```
 cp .env.example .env
 ```
 - Uzupełnij plik `.env` swoimi danymi:
-```env
+```
 DB_HOST=localhost
 DB_USER=twoj_uzytkownik
 DB_PASSWORD=twoje_haslo
@@ -74,8 +77,35 @@ PORT=3000
 ```
 
 5. Uruchom serwer:
-```bash
+```
 npm run dev
 ```
 
-Serwer powinien być dostępny pod adresem: `http://localhost:3000`
+### Frontend (Mobile App)
+1. Przejdź do katalogu aplikacji mobilnej:
+```
+cd currency-exchange-app/mobile-app
+```
+
+2. Zainstaluj zależności:
+```
+npm install
+```
+
+3. Skonfiguruj adres IP serwera:
+- W pliku `src/services/api.ts` zaktualizuj `API_URL` na adres IP twojego komputera:
+```
+const API_URL = 'http://192.168.X.X:3000/api'; // Zmień na swoje IP
+```
+
+4. Uruchom aplikację:
+```
+npx expo start
+```
+
+5. Aby uruchomić aplikację na telefonie:
+- Zainstaluj aplikację Expo Go na swoim urządzeniu
+- Upewnij się, że telefon jest w tej samej sieci WiFi co komputer
+- Zeskanuj kod QR wyświetlony w terminalu
+  - iOS: użyj aparatu
+  - Android: użyj aplikacji Expo Go
