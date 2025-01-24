@@ -36,8 +36,6 @@ currency-exchange-app/
 - npm (v6 lub wyższa)
 - Expo CLI (dla aplikacji mobilnej)
 
-
-```
 ## Instalacja i uruchomienie
 
 ### Backend
