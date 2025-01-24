@@ -1,6 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const { User, Wallet } = require("../models");
+const auth = require("../middleware/auth");
 const router = express.Router();
 
 // Rejestracja
@@ -44,7 +45,6 @@ router.post("/register", async (req, res) => {
 });
 
 // Logowanie
-// Logowanie
 router.post("/login", async (req, res) => {
   try {
     console.log("Otrzymane dane logowania:", req.body);
@@ -73,6 +73,61 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error("Błąd logowania:", error);
     res.status(400).json({ error: error.message });
+  }
+});
+
+// Pobierz dane użytkownika
+router.get("/profile", auth, async (req, res) => {
+  try {
+    const user = await User.findOne({
+      where: { id: req.userId },
+      attributes: ["email", "firstName", "lastName"],
+    });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ error: "Użytkownik nie został znaleziony" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("Błąd pobierania profilu:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Edytuj dane użytkownika
+router.put("/profile", auth, async (req, res) => {
+  try {
+    const { firstName, lastName } = req.body;
+
+    const user = await User.findOne({
+      where: { id: req.userId },
+    });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ error: "Użytkownik nie został znaleziony" });
+    }
+
+    // Aktualizuj tylko dozwolone pola
+    user.firstName = firstName;
+    user.lastName = lastName;
+    await user.save();
+
+    res.json({
+      message: "Profil zaktualizowany",
+      user: {
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+    });
+  } catch (error) {
+    console.error("Błąd aktualizacji profilu:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 module.exports = router;

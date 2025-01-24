@@ -31,15 +31,16 @@ class NBPService {
     }
   }
 
-  // Pobieranie historycznych kursów pojedynczej waluty
-  static async getHistoricalRates(code, startDate, endDate, table = "A") {
+  static async getHistoricalRates(code, startDate, endDate) {
     try {
+      // Zmiana endpoint'u na prawidłowy format NBP API
       const response = await axios.get(
-        `${NBP_API_BASE_URL}/rates/${table}/${code}/${startDate}/${endDate}/?format=json`
+        `${NBP_API_BASE_URL}/rates/A/${code}/${startDate}/${endDate}/?format=json`
       );
-      return response.data;
+      return response.data.rates;
     } catch (error) {
-      throw new Error("Nie udało się pobrać historycznych kursów walut");
+      console.error("Błąd pobierania historycznych kursów:", error);
+      throw error;
     }
   }
 

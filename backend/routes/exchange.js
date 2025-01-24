@@ -5,6 +5,41 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 const sequelize = require("../config/config");
 
+// Logowanie wszystkich przychodzących requestów
+router.use((req, res, next) => {
+  console.log("Exchange route request:", {
+    method: req.method,
+    path: req.path,
+    params: req.params,
+    query: req.query,
+  });
+  next();
+});
+
+router.get("/rates/:code/historical", auth, async (req, res) => {
+  console.log("Historical rates params:", req.params);
+  try {
+    const { code } = req.params;
+    const { startDate, endDate } = req.query;
+
+    console.log("Fetching historical rates for:", { code, startDate, endDate });
+
+    if (!startDate || !endDate) {
+      return res
+        .status(400)
+        .json({ error: "Wymagane parametry: startDate i endDate" });
+    }
+
+    const rates = await NBPService.getHistoricalRates(code, startDate, endDate);
+    res.json(rates);
+  } catch (error) {
+    console.error("Błąd pobierania historycznych kursów:", error);
+    res
+      .status(500)
+      .json({ error: "Nie udało się pobrać historycznych kursów" });
+  }
+});
+
 router.get("/rates", auth, async (req, res) => {
   try {
     console.log("Próba pobrania kursów walut");

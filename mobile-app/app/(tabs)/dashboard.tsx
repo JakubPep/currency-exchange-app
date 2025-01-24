@@ -12,7 +12,7 @@ import { View, Text, useThemeColor } from "../../components/Themed";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { TouchableWithoutFeedback } from "react-native";
 import { Keyboard } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 type Wallet = {
   id: string;
@@ -276,7 +276,19 @@ export default function DashboardScreen() {
         </View>
 
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={styles.sectionTitle}>Aktualne kursy walut</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Aktualne kursy walut</Text>
+            <TouchableOpacity
+              onPress={() => router.push("/historical-rates")}
+              style={styles.historicalButton}
+            >
+              <Text
+                style={[styles.historicalButtonText, { color: colors.primary }]}
+              >
+                Historia kursów
+              </Text>
+            </TouchableOpacity>
+          </View>
           {rates.map((rate) => (
             <View
               key={rate.code}
@@ -373,7 +385,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   depositButton: {
     fontSize: 24,
@@ -425,5 +437,18 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  historicalButton: {
+    padding: 8,
+  },
+  historicalButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
