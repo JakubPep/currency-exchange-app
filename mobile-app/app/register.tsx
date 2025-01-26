@@ -1,4 +1,5 @@
 import { useState } from "react";
+import api from "../services/api";
 import {
   Alert,
   SafeAreaView,
@@ -39,29 +40,21 @@ export default function RegisterScreen() {
     try {
       setIsLoading(true);
 
-      const response = await fetch(
-        "http://192.168.33.8:3000/api/auth/register",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            password,
-            firstName,
-            lastName,
-          }),
-        }
-      );
+      const response = await api.post("/auth/register", {
+        email,
+        password,
+        firstName,
+        lastName,
+      });
 
-      const data = await response.json();
-
-      if (response.ok && data.token) {
-        await AsyncStorage.setItem("userToken", data.token);
+      if (response.status === 200 && response.data.token) {
+        await AsyncStorage.setItem("userToken", response.data.token);
         router.replace("/(tabs)/dashboard");
       } else {
-        Alert.alert("Błąd", data.error || "Nie udało się zarejestrować");
+        Alert.alert(
+          "Błąd",
+          response.data.error || "Nie udało się zarejestrować"
+        );
       }
     } catch (error) {
       console.error("Szczegóły błędu:", error);

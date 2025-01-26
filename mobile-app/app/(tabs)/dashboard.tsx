@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { TouchableWithoutFeedback } from "react-native";
 import { Keyboard } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import api from "@/services/api";
 
 type Wallet = {
   id: string;
@@ -143,37 +144,18 @@ export default function DashboardScreen() {
 
   const fetchData = async () => {
     try {
-      const token = await AsyncStorage.getItem("userToken");
+      const [walletsResponse, ratesResponse] = await Promise.all([
+        api.get("/wallet"),
+        api.get("/exchange/rates"),
+      ]);
 
-      const walletsResponse = await fetch(
-        "http://192.168.33.8:3000/api/wallet",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const ratesResponse = await fetch(
-        "http://192.168.33.8:3000/api/exchange/rates",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const walletsData = await walletsResponse.json();
+      const walletsData = walletsResponse.data;
       const sortedWallets = walletsData.sort((a: Wallet, b: Wallet) =>
         a.currency.localeCompare(b.currency)
       );
-      setWallets(sortedWallets);
-      const ratesData = await ratesResponse.json();
 
-      setWallets(walletsData);
-      setRates(ratesData);
+      setWallets(sortedWallets);
+      setRates(ratesResponse.data);
       setIsLoading(false);
     } catch (error) {
       console.error("Błąd:", error);
@@ -183,30 +165,28 @@ export default function DashboardScreen() {
 
   const handleDeposit = async (amount: string) => {
     try {
+      console.log("Próba wpłaty:", { amount, currency: selectedCurrency });
       const token = await AsyncStorage.getItem("userToken");
-      const response = await fetch(
-        "http://192.168.33.8:3000/api/wallet/deposit",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            currency: selectedCurrency,
-            amount: Number(amount),
-          }),
-        }
-      );
+      console.log("Token:", token);
 
-      if (response.ok) {
+      const response = await api.post("/wallet/deposit", {
+        currency: selectedCurrency,
+        amount: Number(amount),
+      });
+
+      console.log("Odpowiedź:", response.data);
+
+      if (response.status === 200 || response.status === 201) {
         Alert.alert("Sukces", "Środki zostały wpłacone");
         fetchData(); // Odświeżamy dane
       } else {
-        const data = await response.json();
-        Alert.alert("Błąd", data.error || "Nie udało się wpłacić środków");
+        Alert.alert(
+          "Błąd",
+          response.data.error || "Nie udało się wpłacić środków"
+        );
       }
     } catch (error) {
+      console.error("Szczegóły błędu:", error);
       Alert.alert("Błąd", "Wystąpił problem z wpłatą środków");
     } finally {
       setIsDepositModalVisible(false);

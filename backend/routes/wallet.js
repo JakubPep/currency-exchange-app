@@ -16,9 +16,9 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-// Zasilenie portfela
 router.post("/deposit", auth, async (req, res) => {
   try {
+    console.log("Otrzymano żądanie wpłaty:", req.body);
     const { currency, amount } = req.body;
 
     const wallet = await Wallet.findOne({
@@ -52,6 +52,7 @@ router.post("/deposit", auth, async (req, res) => {
 
     res.json({ message: "Portfel został zasilony" });
   } catch (error) {
+    console.error("Błąd wpłaty:", error);
     res.status(400).json({ error: error.message });
   }
 });

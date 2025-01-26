@@ -10,6 +10,7 @@ import { View, Text, useThemeColor } from "../components/Themed";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "@/services/api";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -22,29 +23,24 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     try {
       setIsLoading(true);
-
       console.log("Dane do logowania:", { email, password });
 
-      const response = await fetch("http://192.168.33.8:3000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      const response = await api.post("/auth/login", {
+        email,
+        password,
       });
 
       console.log("Status odpowiedzi:", response.status);
-      const data = await response.json();
-      console.log("Odpowiedź serwera:", data);
+      console.log("Odpowiedź serwera:", response.data);
 
-      if (response.ok && data.token) {
-        await AsyncStorage.setItem("userToken", data.token);
+      if (response.status === 200 && response.data.token) {
+        await AsyncStorage.setItem("userToken", response.data.token);
         router.replace("/(tabs)/dashboard");
       } else {
-        Alert.alert("Błąd", data.error || "Nieprawidłowe dane logowania");
+        Alert.alert(
+          "Błąd",
+          response.data.error || "Nieprawidłowe dane logowania"
+        );
       }
     } catch (error) {
       console.error("Szczegóły błędu:", error);

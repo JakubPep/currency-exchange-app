@@ -57,8 +57,19 @@ router.post("/exchange", auth, async (req, res) => {
 
   try {
     const { fromCurrency, toCurrency, amount } = req.body;
+    console.log("Otrzymano żądanie wymiany:", {
+      fromCurrency,
+      toCurrency,
+      amount,
+    });
 
-    // Sprawdź dostępność środków w źródłowym portfelu
+    // Podstawowa walidacja
+    if (!fromCurrency || !toCurrency || !amount) {
+      await transaction.rollback();
+      return res.status(400).json({ error: "Brakujące dane" });
+    }
+
+    // Sprawdź dostępność środków
     const sourceWallet = await Wallet.findOne({
       where: {
         userId: req.userId,
@@ -154,8 +165,8 @@ router.post("/exchange", auth, async (req, res) => {
     });
   } catch (error) {
     await transaction.rollback();
-    console.error("Błąd wymiany walut:", error);
-    res.status(500).json({ error: error.message });
+    console.error("Błąd wymiany:", error);
+    res.status(400).json({ error: error.message });
   }
 });
 

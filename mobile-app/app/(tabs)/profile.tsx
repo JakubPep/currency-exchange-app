@@ -9,6 +9,7 @@ import {
 import { View, Text, useThemeColor } from "../../components/Themed";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "@/services/api";
 
 type UserProfile = {
   email: string;
@@ -129,8 +130,14 @@ export default function ProfileScreen() {
         text: "Wyloguj",
         style: "destructive",
         onPress: async () => {
-          await AsyncStorage.removeItem("userToken");
-          router.replace("/login");
+          try {
+            await AsyncStorage.removeItem("userToken");
+            // Przekieruj do ekranu logowania
+            router.replace("/login");
+          } catch (error) {
+            console.error("Błąd podczas wylogowywania:", error);
+            Alert.alert("Błąd", "Nie udało się wylogować");
+          }
         },
       },
     ]);
@@ -140,7 +147,7 @@ export default function ProfileScreen() {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        "http://192.168.33.8:3000/api/auth/profile",
+        "http://192.168.0.106:3000/api/auth/profile",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -171,29 +178,16 @@ export default function ProfileScreen() {
 
   const handleUpdateProfile = async (firstName: string, lastName: string) => {
     try {
-      const token = await AsyncStorage.getItem("userToken");
-      const response = await fetch(
-        "http://192.168.33.8:3000/api/auth/profile",
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ firstName, lastName }),
-        }
-      );
+      const response = await api.put("/auth/profile", { firstName, lastName });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setUser(data.user);
+      if (response.status === 200) {
+        setUser(response.data.user);
         setIsEditModalVisible(false);
         Alert.alert("Sukces", "Profil został zaktualizowany");
       } else {
         Alert.alert(
           "Błąd",
-          data.error || "Nie udało się zaktualizować profilu"
+          response.data.error || "Nie udało się zaktualizować profilu"
         );
       }
     } catch (error) {

@@ -12,6 +12,7 @@ import { View, Text, useThemeColor } from "../components/Themed";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useRouter } from "expo-router";
+import api from "@/services/api";
 
 type HistoricalRate = {
   currency: string;
@@ -33,15 +34,12 @@ export default function HistoricalRatesScreen() {
   const fetchHistoricalRates = async () => {
     try {
       setIsLoading(true);
-      const token = await AsyncStorage.getItem("userToken");
 
-      // Walidacja dat
       if (!startDate || !endDate) {
         Alert.alert("Błąd", "Wprowadź daty rozpoczęcia i zakończenia");
         return;
       }
 
-      // Sprawdź format dat
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
         Alert.alert(
@@ -51,31 +49,12 @@ export default function HistoricalRatesScreen() {
         return;
       }
 
-      // logowanie zapytań dla debuggingu
-      console.log(
-        "Wysyłanie zapytania do:",
-        `http://192.168.33.8:3000/api/exchange/rates/${selectedCurrency}/historical?startDate=${startDate}&endDate=${endDate}`
+      const response = await api.get(
+        `/exchange/rates/${selectedCurrency}/historical?startDate=${startDate}&endDate=${endDate}`
       );
 
-      const response = await fetch(
-        `http://192.168.33.8:3000/api/exchange/rates/${selectedCurrency}/historical?startDate=${startDate}&endDate=${endDate}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        }
-      );
-
-      console.log("Status odpowiedzi:", response.status);
-      const responseText = await response.text();
-      console.log("Surowa odpowiedź:", responseText);
-
-      if (response.ok) {
-        const data = JSON.parse(responseText);
-        setRates(data);
+      if (response.status === 200) {
+        setRates(response.data);
       } else {
         Alert.alert("Błąd", "Nie udało się pobrać danych historycznych");
       }

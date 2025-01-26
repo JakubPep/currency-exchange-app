@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { View, Text, useThemeColor } from "../../components/Themed";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "@/services/api";
 
 type Transaction = {
   id: string;
@@ -28,19 +29,8 @@ export default function HistoryScreen() {
 
   const fetchTransactions = async () => {
     try {
-      const token = await AsyncStorage.getItem("userToken");
-      const response = await fetch(
-        "http://192.168.33.8:3000/api/transactions",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = await response.json();
-      setTransactions(data);
+      const response = await api.get("/transactions");
+      setTransactions(response.data);
     } catch (error) {
       console.error("Błąd pobierania transakcji:", error);
     } finally {

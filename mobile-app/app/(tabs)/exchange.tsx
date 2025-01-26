@@ -13,6 +13,7 @@ import {
 import { View, Text, useThemeColor } from "../../components/Themed";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import api from "@/services/api";
 
 type Rate = {
   currency: string;
@@ -50,33 +51,13 @@ export default function ExchangeScreen() {
 
   const fetchInitialData = async () => {
     try {
-      const token = await AsyncStorage.getItem("userToken");
+      const [ratesResponse, walletsResponse] = await Promise.all([
+        api.get("/exchange/rates"),
+        api.get("/wallet"),
+      ]);
 
-      // Pobierz kursy walut
-      const ratesResponse = await fetch(
-        "http://192.168.33.8:3000/api/exchange/rates",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const ratesData = await ratesResponse.json();
-      setRates(ratesData);
-
-      // Pobierz portfele
-      const walletsResponse = await fetch(
-        "http://192.168.33.8:3000/api/wallet",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const walletsData = await walletsResponse.json();
-      setWallets(walletsData);
+      setRates(ratesResponse.data);
+      setWallets(walletsResponse.data);
     } catch (error) {
       console.error("Błąd pobierania danych:", error);
     }
@@ -113,32 +94,30 @@ export default function ExchangeScreen() {
   };
 
   const handleExchange = async () => {
-    if (!amount || !fromCurrency || !toCurrency) {
-      Alert.alert("Błąd", "Wypełnij wszystkie pola");
-      return;
-    }
-
     try {
-      const token = await AsyncStorage.getItem("userToken");
-      const response = await fetch(
-        "http://192.168.33.8:3000/api/exchange/exchange",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            fromCurrency,
-            toCurrency,
-            amount: Number(amount),
-          }),
-        }
-      );
+      if (!amount || !fromCurrency || !toCurrency) {
+        Alert.alert("Błąd", "Wypełnij wszystkie pola");
+        return;
+      }
 
-      const data = await response.json();
+      if (fromCurrency === toCurrency) {
+        Alert.alert("Błąd", "Wybierz różne waluty");
+        return;
+      }
 
-      if (response.ok) {
+      console.log("Dane do wymiany:", {
+        fromCurrency,
+        toCurrency,
+        amount: Number(amount),
+      });
+
+      const response = await api.post("/exchange/exchange", {
+        fromCurrency,
+        toCurrency,
+        amount: Number(amount),
+      });
+
+      if (response.status === 200) {
         Alert.alert("Sukces", "Wymiana została zrealizowana", [
           {
             text: "OK",
@@ -147,11 +126,13 @@ export default function ExchangeScreen() {
             },
           },
         ]);
-      } else {
-        Alert.alert("Błąd", data.error || "Nie udało się wykonać wymiany");
       }
-    } catch (error) {
-      Alert.alert("Błąd", "Wystąpił problem z wymianą walut");
+    } catch (error: any) {
+      console.error("Szczegóły błędu:", error.response?.data);
+      Alert.alert(
+        "Błąd",
+        error.response?.data?.error || "Wystąpił problem z wymianą walut"
+      );
     }
   };
 
@@ -217,79 +198,77 @@ export default function ExchangeScreen() {
   );
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Wymiana walut</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Wymiana walut</Text>
 
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
-          <Text style={styles.label}>Wymieniam z:</Text>
-          <TouchableOpacity
-            style={[
-              styles.currencySelector,
-              { backgroundColor: colors.background },
-            ]}
-            onPress={() => setShowFromModal(true)}
-          >
-            <Text style={{ color: colors.text }}>{fromCurrency}</Text>
-          </TouchableOpacity>
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <Text style={styles.label}>Wymieniam z:</Text>
+        <TouchableOpacity
+          style={[
+            styles.currencySelector,
+            { backgroundColor: colors.background },
+          ]}
+          onPress={() => setShowFromModal(true)}
+        >
+          <Text style={{ color: colors.text }}>{fromCurrency}</Text>
+        </TouchableOpacity>
 
-          <Text style={styles.label}>Kwota:</Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.background,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
-            value={amount}
-            onChangeText={setAmount}
-            placeholder="Wprowadź kwotę"
-            placeholderTextColor={colors.placeholder}
-            keyboardType="numeric"
-          />
-
-          <Text style={styles.label}>Wymieniam na:</Text>
-          <TouchableOpacity
-            style={[
-              styles.currencySelector,
-              { backgroundColor: colors.background },
-            ]}
-            onPress={() => setShowToModal(true)}
-          >
-            <Text style={{ color: colors.text }}>{toCurrency}</Text>
-          </TouchableOpacity>
-
-          {convertedAmount !== null && (
-            <Text style={[styles.conversionResult, { color: colors.primary }]}>
-              Otrzymasz: {convertedAmount.toFixed(2)} {toCurrency}
-            </Text>
-          )}
-
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: colors.primary }]}
-            onPress={handleExchange}
-          >
-            <Text style={styles.buttonText}>Wymień walutę</Text>
-          </TouchableOpacity>
-        </View>
-
-        <CurrencySelector
-          visible={showFromModal}
-          onClose={() => setShowFromModal(false)}
-          onSelect={setFromCurrency}
-          currentValue={fromCurrency}
+        <Text style={styles.label}>Kwota:</Text>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.background,
+              color: colors.text,
+              borderColor: colors.border,
+            },
+          ]}
+          value={amount}
+          onChangeText={setAmount}
+          placeholder="Wprowadź kwotę"
+          placeholderTextColor={colors.placeholder}
+          keyboardType="numeric"
         />
 
-        <CurrencySelector
-          visible={showToModal}
-          onClose={() => setShowToModal(false)}
-          onSelect={setToCurrency}
-          currentValue={toCurrency}
-        />
+        <Text style={styles.label}>Wymieniam na:</Text>
+        <TouchableOpacity
+          style={[
+            styles.currencySelector,
+            { backgroundColor: colors.background },
+          ]}
+          onPress={() => setShowToModal(true)}
+        >
+          <Text style={{ color: colors.text }}>{toCurrency}</Text>
+        </TouchableOpacity>
+
+        {convertedAmount !== null && (
+          <Text style={[styles.conversionResult, { color: colors.primary }]}>
+            Otrzymasz: {convertedAmount.toFixed(2)} {toCurrency}
+          </Text>
+        )}
+
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.primary }]}
+          onPress={handleExchange}
+        >
+          <Text style={styles.buttonText}>Wymień walutę</Text>
+        </TouchableOpacity>
       </View>
-    </TouchableWithoutFeedback>
+
+      <CurrencySelector
+        visible={showFromModal}
+        onClose={() => setShowFromModal(false)}
+        onSelect={setFromCurrency}
+        currentValue={fromCurrency}
+      />
+
+      <CurrencySelector
+        visible={showToModal}
+        onClose={() => setShowToModal(false)}
+        onSelect={setToCurrency}
+        currentValue={toCurrency}
+      />
+    </View>
   );
 }
 
